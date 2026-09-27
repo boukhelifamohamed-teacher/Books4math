@@ -1,0 +1,87 @@
+name: Build iOS App
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Install Cordova
+        run: npm install -g cordova
+
+      - name: Add iOS platform
+        run: cordova platform add ios
+
+      - name: Prepare iOS project
+        run: cordova prepare ios
+
+      - name: Build unsigned iOS app
+        shell: bash
+        run: |
+          set -e
+          mkdir -p build
+
+          WORKSPACE=$(find platforms/ios -maxdepth 1 -name "*.xcworkspace" -print -quit)
+          PROJECT=$(find platforms/ios -maxdepth 1 -name "*.xcodeproj" -print -quit)
+
+          if [ -n "$WORKSPACE" ]; then
+            echo "Using workspace: $WORKSPACE"
+            xcodebuild \
+              -workspace "$WORKSPACE" \
+              -scheme "CordovaLib" \
+              -sdk iphoneos \
+              -configuration Debug \
+              -derivedDataPath build/DerivedData \
+              CODE_SIGNING_ALLOWED=NO \
+              CODE_SIGNING_REQUIRED=NO \
+              build || true
+
+            APP=$(find build/DerivedData -type d -name "*.app" -path "*Build/Products/Debug-iphoneos/*" | head -n 1)
+          else
+            echo "Using project: $PROJECT"
+            xcodebuild \
+              -project "$PROJECT" \
+              -sdk iphoneos \
+              -configuration Debug \
+              -derivedDataPath build/DerivedData \
+              CODE_SIGNING_ALLOWED=NO \
+              CODE_SIGNING_REQUIRED=NO \
+              build
+
+            APP=$(find build/DerivedData -type d -name "*.app" -path "*Build/Products/Debug-iphoneos/*" | head -n 1)
+          fi
+
+          if [ -z "$APP" ]; then
+            echo "No .app found. Showing Xcode build products:"
+            find build/DerivedData -maxdepth 6 -type d -name "*.app" -print || true
+            exit 1
+          fi
+
+          echo "APP=$APP" >> "$GITHUB_ENV"
+          cp -R "$APP" build/MathMiddle.app
+
+          mkdir -p build/Payload
+          cp -R "$APP" build/Payload/
+          cd build
+          zip -qry MathMiddle-unsigned.ipa Payload
+          cd ..
+
+      - name: Upload iOS build
+        uses: actions/upload-artifact@v6
+        with:
+          name: math-middle-ios-unsigned
+          path: |
+            build/MathMiddle-unsigned.ipa
+            build/MathMiddle.app
