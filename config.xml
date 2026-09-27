@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<widget id="dz.boukhlifa.mathmiddle"
+        version="1.0.0"
+        xmlns="http://www.w3.org/ns/widgets"
+        xmlns:android="http://schemas.android.com/apk/res/android">
+    <name>كتب الرياضيات - المتوسط</name>
+    <description>كتب الرياضيات لطور التعليم المتوسط في الجزائر</description>
+    <author email="boukhlifa@example.com" href="https://example.com">الأستاذ بوخليفة محمد</author>
+
+    <content src="index.html" />
+
+    <access origin="*" />
+    <allow-navigation href="*" />
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+
+    <preference name="Fullscreen" value="false" />
+    <preference name="DisallowOverscroll" value="true" />
+    <preference name="SplashScreenDelay" value="1800" />
+    <preference name="AutoHideSplashScreen" value="true" />
+    <preference name="AndroidWindowSplashScreenAnimatedIcon" value="resources/splashTemplate.png" />
+    <preference name="AndroidWindowSplashScreenBackground" value="#071D55" />
+
+    <platform name="ios">
+        <preference name="WKWebViewOnly" value="true" />
+        <feature name="CDVWKWebViewEngine">
+            <param name="ios-package" value="CDVWKWebViewEngine" />
+        </feature>
+        <preference name="CordovaWebViewEngine" value="CDVWKWebViewEngine" />
+        <preference name="AllowInlineMediaPlayback" value="true" />
+        <preference name="DisallowOverscroll" value="true" />
+    </platform>
+</widget>

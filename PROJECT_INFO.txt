@@ -1,0 +1,4 @@
+اسم التطبيق: كتب الرياضيات - المتوسط
+المعرّف: dz.boukhlifa.mathmiddle
+النوع: Apache Cordova / VoltBuilder
+المصمم: الأستاذ بوخليفة محمد
