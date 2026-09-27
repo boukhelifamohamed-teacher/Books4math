@@ -51,21 +51,24 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             build
 
+          # Cordova can use the Arabic display name as the .app filename.
+          # Find the generated application instead of assuming the filename is App.app.
           APP=$(find build/DerivedData/Build/Products/Debug-iphoneos \
-            -maxdepth 1 -type d -name "App.app" -print -quit)
+            -maxdepth 1 -type d -name "*.app" -print -quit)
 
           if [ -z "$APP" ]; then
-            echo "ERROR: App.app was not produced."
+            echo "ERROR: No .app was produced."
+            echo "Available products:"
             find build/DerivedData/Build/Products -maxdepth 3 -type d -name "*.app" -print || true
             exit 1
           fi
 
-          echo "Found: $APP"
+          echo "Found application: $APP"
           cp -R "$APP" build/MathMiddle.app
 
           rm -rf build/Payload
           mkdir -p build/Payload
-          cp -R "$APP" build/Payload/App.app
+          cp -R "$APP" build/Payload/MathMiddle.app
 
           cd build
           zip -qry MathMiddle-unsigned.ipa Payload
