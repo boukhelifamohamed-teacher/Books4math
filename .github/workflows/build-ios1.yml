@@ -1,0 +1,83 @@
+name: Build iOS App
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Install Cordova
+        run: npm install -g cordova
+
+      - name: Add iOS platform
+        run: cordova platform add ios
+
+      - name: Prepare iOS project
+        run: cordova prepare ios
+
+      - name: Build unsigned iOS app
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build
+
+          WORKSPACE="platforms/ios/App.xcworkspace"
+
+          echo "Available schemes:"
+          xcodebuild -workspace "$WORKSPACE" -list
+
+          echo "Building App scheme without code signing..."
+          xcodebuild \
+            -workspace "$WORKSPACE" \
+            -scheme "App" \
+            -sdk iphoneos \
+            -configuration Debug \
+            -destination "generic/platform=iOS" \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+          # Cordova can use the Arabic display name as the .app filename.
+          # Find the generated application instead of assuming the filename is App.app.
+          APP=$(find build/DerivedData/Build/Products/Debug-iphoneos \
+            -maxdepth 1 -type d -name "*.app" -print -quit)
+
+          if [ -z "$APP" ]; then
+            echo "ERROR: No .app was produced."
+            echo "Available products:"
+            find build/DerivedData/Build/Products -maxdepth 3 -type d -name "*.app" -print || true
+            exit 1
+          fi
+
+          echo "Found application: $APP"
+          cp -R "$APP" build/MathMiddle.app
+
+          rm -rf build/Payload
+          mkdir -p build/Payload
+          cp -R "$APP" build/Payload/MathMiddle.app
+
+          cd build
+          zip -qry MathMiddle-unsigned.ipa Payload
+          cd ..
+
+      - name: Upload iOS build
+        uses: actions/upload-artifact@v6
+        with:
+          name: math-middle-ios-unsigned
+          path: |
+            build/MathMiddle-unsigned.ipa
+            build/MathMiddle.app
